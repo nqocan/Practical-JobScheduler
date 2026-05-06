@@ -21,7 +21,7 @@ public class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> logger) :
         {
             FullMode = BoundedChannelFullMode.Wait,
             SingleWriter = true,
-            SingleReader = false
+            SingleReader = false,
         });
 
         await Task.WhenAll(
@@ -86,41 +86,35 @@ public class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> logger) :
 
         using var scope = scopeFactory.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IJobRepository>();
-        var statusTracker = scope.ServiceProvider.GetRequiredService<IJobStatusTracker>();
 
         try
         {
             logger.LogInformation("Starting job {JobId} (type={Type})", job.Id, job.Type);
             job.MarkAsRunning();
             await repository.UpdateAsync(job);
-            await statusTracker.SetStatusAsync(job.Id, JobStatus.Running);
 
             await ExecuteJobAsync(job, cts.Token);
 
             job.MarkAsCompleted();
             await repository.UpdateAsync(job);
-            await statusTracker.SetStatusAsync(job.Id, JobStatus.Completed);
             logger.LogInformation("Completed job {JobId}", job.Id);
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
         {
             logger.LogWarning("Job {JobId} timed out after {Timeout}s", job.Id, TimeoutSeconds);
-            await HandleFailureAsync(job, "Job timed out.", repository, statusTracker);
+            await HandleFailureAsync(job, "Job timed out.", repository);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Job {JobId} failed", job.Id);
-            await HandleFailureAsync(job, ex.Message, repository, statusTracker);
+            await HandleFailureAsync(job, ex.Message, repository);
         }
     }
 
-    private async Task HandleFailureAsync(Job job, string error, IJobRepository repository, IJobStatusTracker statusTracker)
+    private async Task HandleFailureAsync(Job job, string error, IJobRepository repository)
     {
         job.MarkAsFailed(error);
         await repository.UpdateAsync(job);
-
-        var finalStatus = job.Status == JobStatus.Pending ? JobStatus.Pending : JobStatus.Failed;
-        await statusTracker.SetStatusAsync(job.Id, finalStatus);
 
         if (job.Status == JobStatus.Pending)
         {
