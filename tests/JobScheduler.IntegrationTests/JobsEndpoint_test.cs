@@ -12,15 +12,21 @@ public class JobsEndpoint_test(JobsApiFactory factory) : IClassFixture<JobsApiFa
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
     };
 
     // Arrange
-    private static object EmailJobRequest() => new
-    {
-        type = "Email",
-        payload = new { to = "test@example.com", subject = "Hello", body = "World" }
-    };
+    private static object EmailJobRequest() =>
+        new
+        {
+            type = "Email",
+            payload = new
+            {
+                to = "test@example.com",
+                subject = "Hello",
+                body = "World",
+            },
+        };
 
     [Fact]
     public async Task CreateJob_ValidRequest_ReturnsCreated()
@@ -90,8 +96,7 @@ public class JobsEndpoint_test(JobsApiFactory factory) : IClassFixture<JobsApiFa
         var body = await response.Content.ReadAsStringAsync();
         var jobs = JsonDocument.Parse(body).RootElement.EnumerateArray().ToList();
         jobs.Should().NotBeEmpty();
-        jobs.Should().AllSatisfy(j =>
-            j.GetProperty("status").GetString().Should().Be("Pending"));
+        jobs.Should().AllSatisfy(j => j.GetProperty("status").GetString().Should().Be("Pending"));
     }
 
     [Fact]

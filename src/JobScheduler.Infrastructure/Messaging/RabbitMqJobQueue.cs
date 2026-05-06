@@ -16,18 +16,30 @@ public class RabbitMqJobQueue : IJobQueue, IAsyncDisposable
     private readonly IChannel _channel;
     private readonly ILogger<RabbitMqJobQueue> _logger;
 
-    private RabbitMqJobQueue(IConnection connection, IChannel channel, ILogger<RabbitMqJobQueue> logger)
+    private RabbitMqJobQueue(
+        IConnection connection,
+        IChannel channel,
+        ILogger<RabbitMqJobQueue> logger
+    )
     {
         _connection = connection;
         _channel = channel;
         _logger = logger;
     }
 
-    public static async Task<RabbitMqJobQueue> CreateAsync(IConnectionFactory factory, ILogger<RabbitMqJobQueue> logger)
+    public static async Task<RabbitMqJobQueue> CreateAsync(
+        IConnectionFactory factory,
+        ILogger<RabbitMqJobQueue> logger
+    )
     {
         var connection = await factory.CreateConnectionAsync();
         var channel = await connection.CreateChannelAsync();
-        await channel.QueueDeclareAsync(QueueName, durable: true, exclusive: false, autoDelete: false);
+        await channel.QueueDeclareAsync(
+            QueueName,
+            durable: true,
+            exclusive: false,
+            autoDelete: false
+        );
         return new RabbitMqJobQueue(connection, channel, logger);
     }
 
@@ -35,7 +47,13 @@ public class RabbitMqJobQueue : IJobQueue, IAsyncDisposable
     {
         var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(job));
         var props = new BasicProperties { Persistent = true };
-        await _channel.BasicPublishAsync(exchange: "", routingKey: QueueName, mandatory: false, basicProperties: props, body: body);
+        await _channel.BasicPublishAsync(
+            exchange: "",
+            routingKey: QueueName,
+            mandatory: false,
+            basicProperties: props,
+            body: body
+        );
         _logger.LogInformation("Enqueued job {JobId}", job.Id);
     }
 
@@ -52,7 +70,12 @@ public class RabbitMqJobQueue : IJobQueue, IAsyncDisposable
             tcs.TrySetResult(job);
         };
 
-        await _channel.BasicConsumeAsync(QueueName, autoAck: false, consumer: consumer, cancellationToken: cancellationToken);
+        await _channel.BasicConsumeAsync(
+            QueueName,
+            autoAck: false,
+            consumer: consumer,
+            cancellationToken: cancellationToken
+        );
         return await tcs.Task;
     }
 

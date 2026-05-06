@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JobScheduler.Infrastructure.Persistence;
 
-public class JobSchedulerDbContext(DbContextOptions<JobSchedulerDbContext> options) : DbContext(options)
+public class JobSchedulerDbContext(DbContextOptions<JobSchedulerDbContext> options)
+    : DbContext(options)
 {
     public DbSet<Job> Jobs => Set<Job>();
 

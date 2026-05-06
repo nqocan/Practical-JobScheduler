@@ -7,7 +7,8 @@ public class Worker(
     IJobQueue jobQueue,
     IJobRepository jobRepository,
     IJobStatusTracker statusTracker,
-    ILogger<Worker> logger) : BackgroundService
+    ILogger<Worker> logger
+) : BackgroundService
 {
     private const int MaxConcurrency = 5;
     private const int TimeoutSeconds = 30;
@@ -19,21 +20,25 @@ public class Worker(
         while (!stoppingToken.IsCancellationRequested)
         {
             var job = await jobQueue.DequeueAsync(stoppingToken);
-            if (job is null) continue;
+            if (job is null)
+                continue;
 
             await semaphore.WaitAsync(stoppingToken);
 
-            _ = Task.Run(async () =>
-            {
-                try
+            _ = Task.Run(
+                async () =>
                 {
-                    await ProcessJobAsync(job, stoppingToken);
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            }, stoppingToken);
+                    try
+                    {
+                        await ProcessJobAsync(job, stoppingToken);
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                },
+                stoppingToken
+            );
         }
     }
 
@@ -56,7 +61,8 @@ public class Worker(
             await statusTracker.SetStatusAsync(job.Id, JobStatus.Completed);
             logger.LogInformation("Completed job {JobId}", job.Id);
         }
-        catch (OperationCanceledException) when (cts.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
+        catch (OperationCanceledException)
+            when (cts.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
         {
             logger.LogWarning("Job {JobId} timed out after {Timeout}s", job.Id, TimeoutSeconds);
             await HandleFailureAsync(job, "Job timed out.");
@@ -79,7 +85,12 @@ public class Worker(
         if (job.Status == JobStatus.Pending)
         {
             var delay = TimeSpan.FromSeconds(Math.Pow(2, job.RetryCount));
-            logger.LogInformation("Retrying job {JobId} in {Delay}s (attempt {Attempt})", job.Id, delay.TotalSeconds, job.RetryCount);
+            logger.LogInformation(
+                "Retrying job {JobId} in {Delay}s (attempt {Attempt})",
+                job.Id,
+                delay.TotalSeconds,
+                job.RetryCount
+            );
             await Task.Delay(delay);
             await jobQueue.EnqueueAsync(job);
         }
@@ -92,10 +103,10 @@ public class Worker(
             JobType.Email => SimulateAsync(cancellationToken),
             JobType.Export => SimulateAsync(cancellationToken),
             JobType.Sync => SimulateAsync(cancellationToken),
-            _ => throw new NotSupportedException($"Unknown job type: {job.Type}")
+            _ => throw new NotSupportedException($"Unknown job type: {job.Type}"),
         };
     }
 
-    private static Task SimulateAsync(CancellationToken cancellationToken)
-        => Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+    private static Task SimulateAsync(CancellationToken cancellationToken) =>
+        Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
 }
