@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using JobScheduler.Core.Enums;
 
 namespace JobScheduler.IntegrationTests;
 
@@ -10,22 +9,11 @@ public class JobsEndpoint_test(JobsApiFactory factory) : IClassFixture<JobsApiFa
 {
     private readonly HttpClient _client = factory.CreateClient();
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-    };
-
-    // Arrange
     private static object EmailJobRequest() =>
         new
         {
             type = "Email",
-            payload = new
-            {
-                to = "test@example.com",
-                subject = "Hello",
-                body = "World",
-            },
+            payload = new { to = "test@example.com", subject = "Hello", body = "World" },
         };
 
     [Fact]
@@ -45,8 +33,8 @@ public class JobsEndpoint_test(JobsApiFactory factory) : IClassFixture<JobsApiFa
     {
         // Arrange
         var created = await _client.PostAsJsonAsync("/jobs", EmailJobRequest());
-        var createdBody = await created.Content.ReadAsStringAsync();
-        var id = JsonDocument.Parse(createdBody).RootElement.GetProperty("id").GetString();
+        var id = JsonDocument.Parse(await created.Content.ReadAsStringAsync())
+            .RootElement.GetProperty("id").GetString();
 
         // Act
         var response = await _client.GetAsync($"/jobs/{id}");
@@ -68,21 +56,6 @@ public class JobsEndpoint_test(JobsApiFactory factory) : IClassFixture<JobsApiFa
     }
 
     [Fact]
-    public async Task CancelJob_PendingJob_ReturnsNoContent()
-    {
-        // Arrange
-        var created = await _client.PostAsJsonAsync("/jobs", EmailJobRequest());
-        var createdBody = await created.Content.ReadAsStringAsync();
-        var id = JsonDocument.Parse(createdBody).RootElement.GetProperty("id").GetString();
-
-        // Act
-        var response = await _client.DeleteAsync($"/jobs/{id}");
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-    }
-
-    [Fact]
     public async Task ListJobs_FilterByStatus_ReturnsMatchingJobs()
     {
         // Arrange
@@ -93,19 +66,9 @@ public class JobsEndpoint_test(JobsApiFactory factory) : IClassFixture<JobsApiFa
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadAsStringAsync();
-        var jobs = JsonDocument.Parse(body).RootElement.EnumerateArray().ToList();
+        var jobs = JsonDocument.Parse(await response.Content.ReadAsStringAsync())
+            .RootElement.EnumerateArray().ToList();
         jobs.Should().NotBeEmpty();
         jobs.Should().AllSatisfy(j => j.GetProperty("status").GetString().Should().Be("Pending"));
-    }
-
-    [Fact]
-    public async Task CancelJob_NonExistentId_ReturnsNotFound()
-    {
-        // Act
-        var response = await _client.DeleteAsync($"/jobs/{Guid.NewGuid()}");
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }

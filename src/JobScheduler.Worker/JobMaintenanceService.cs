@@ -18,8 +18,8 @@ public class JobMaintenanceService(IServiceScopeFactory scopeFactory, ILogger<Jo
             await Task.Delay(TimeSpan.FromHours(24), ct);
             using var scope = scopeFactory.CreateScope();
             var repository = scope.ServiceProvider.GetRequiredService<IJobRepository>();
-            await repository.DeleteOldJobsAsync(DateTime.UtcNow.AddDays(-7));
-            logger.LogInformation("Deleted jobs older than 7 days");
+            await repository.DeleteOldJobsAsync(DateTime.UtcNow.AddDays(-1));
+            logger.LogInformation("Deleted completed/failed jobs not updated in the last 24 hours");
         }
     }
 

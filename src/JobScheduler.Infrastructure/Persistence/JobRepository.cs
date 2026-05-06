@@ -50,7 +50,7 @@ public class JobRepository(JobSchedulerDbContext db) : IJobRepository
     {
         var terminal = new[] { JobStatus.Completed, JobStatus.Failed, JobStatus.Cancelled };
         await db.Jobs
-            .Where(j => terminal.Contains(j.Status) && j.CreatedAt < olderThan)
+            .Where(j => terminal.Contains(j.Status) && j.UpdatedAt < olderThan)
             .ExecuteDeleteAsync();
     }
 

@@ -41,23 +41,5 @@ public class JobsController(IJobRepository repository) : ControllerBase
         return Ok(jobs.Select(JobResponse.From));
     }
 
-    [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Cancel(Guid id)
-    {
-        try
-        {
-            var job = await repository.GetByIdAsync(id);
-            job.MarkAsCancelled();
-            await repository.UpdateAsync(job);
-            return NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
-    }
+
 }

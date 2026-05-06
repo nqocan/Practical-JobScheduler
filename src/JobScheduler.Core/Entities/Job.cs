@@ -12,6 +12,7 @@ public class Job
     public int MaxRetries { get; private set; }
     public string? ErrorMessage { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public DateTime UpdatedAt { get; private set; }
     public DateTime? StartedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
 
@@ -19,6 +20,7 @@ public class Job
 
     public static Job Create(JobType type, string payload, int maxRetries = 3)
     {
+        var now = DateTime.UtcNow;
         return new Job
         {
             Id = Guid.NewGuid(),
@@ -27,7 +29,8 @@ public class Job
             Payload = payload,
             RetryCount = 0,
             MaxRetries = maxRetries,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = now,
+            UpdatedAt = now,
         };
     }
 
@@ -35,23 +38,22 @@ public class Job
     {
         Status = JobStatus.Running;
         StartedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void MarkAsCompleted()
     {
         Status = JobStatus.Completed;
         CompletedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void MarkAsFailed(string errorMessage)
     {
         ErrorMessage = errorMessage;
         RetryCount++;
-
-        if (RetryCount >= MaxRetries)
-            Status = JobStatus.Failed;
-        else
-            Status = JobStatus.Pending;
+        Status = RetryCount >= MaxRetries ? JobStatus.Failed : JobStatus.Pending;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void MarkAsCancelled()
@@ -60,5 +62,6 @@ public class Job
             throw new InvalidOperationException("Only pending jobs can be cancelled.");
 
         Status = JobStatus.Cancelled;
+        UpdatedAt = DateTime.UtcNow;
     }
 }
