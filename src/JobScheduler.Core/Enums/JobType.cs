@@ -4,5 +4,5 @@ public enum JobType
 {
     Email,
     Export,
-    Sync
+    Sync,
 }

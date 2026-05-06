@@ -10,6 +10,7 @@ public record JobResponse(
     int RetryCount,
     string? ErrorMessage,
     DateTime CreatedAt,
+    DateTime UpdatedAt,
     DateTime? StartedAt,
     DateTime? CompletedAt
 )
@@ -22,6 +23,7 @@ public record JobResponse(
             job.RetryCount,
             job.ErrorMessage,
             job.CreatedAt,
+            job.UpdatedAt,
             job.StartedAt,
             job.CompletedAt
         );

@@ -34,3 +34,6 @@ appsettings.Local.json
 # OS
 .DS_Store
 Thumbs.db
+
+#claude
+*.local.json

@@ -1,20 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-JobScheduler.Worker-f9a2d794-3868-4953-a5b3-81b4791b0e21</UserSecretsId>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.7" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
-    <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
-    <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\JobScheduler.Core\JobScheduler.Core.csproj" />
     <ProjectReference Include="..\JobScheduler.Infrastructure\JobScheduler.Infrastructure.csproj" />
