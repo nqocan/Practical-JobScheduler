@@ -14,14 +14,15 @@ public record JobResponse(
     DateTime? CompletedAt
 )
 {
-    public static JobResponse From(Job job) => new(
-        job.Id,
-        job.Type,
-        job.Status,
-        job.RetryCount,
-        job.ErrorMessage,
-        job.CreatedAt,
-        job.StartedAt,
-        job.CompletedAt
-    );
+    public static JobResponse From(Job job) =>
+        new(
+            job.Id,
+            job.Type,
+            job.Status,
+            job.RetryCount,
+            job.ErrorMessage,
+            job.CreatedAt,
+            job.StartedAt,
+            job.CompletedAt
+        );
 }

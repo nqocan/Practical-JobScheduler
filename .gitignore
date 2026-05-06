@@ -29,7 +29,6 @@ TestResults/
 # Environment / secrets
 .env
 .env.*
-appsettings.Development.json
 appsettings.Local.json
 
 # OS

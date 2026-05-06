@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using JobScheduler.Core.Interfaces;
 using JobScheduler.Infrastructure.Messaging;
 using JobScheduler.Infrastructure.Persistence;
@@ -7,7 +8,8 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApi();
 
 // PostgreSQL

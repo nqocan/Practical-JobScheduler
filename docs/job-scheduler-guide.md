@@ -1,7 +1,6 @@
 # Distributed Job Scheduler — Build Guide
 
 > Stack: ASP.NET Core · RabbitMQ · Redis · PostgreSQL · xUnit · Testcontainers  
-> Estimated time: 2–3 weeks
 
 ---
 
