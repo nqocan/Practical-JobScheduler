@@ -21,6 +21,19 @@ public class JobRepository(JobSchedulerDbContext db) : IJobRepository
         return await query.ToListAsync();
     }
 
+    public async Task<IEnumerable<Job>> GetPendingJobsAsync(int limit)
+    {
+        return await db.Jobs
+            .FromSqlRaw("""
+                SELECT * FROM "Jobs"
+                WHERE "Status" = 'Pending'
+                ORDER BY "CreatedAt"
+                LIMIT {0}
+                FOR UPDATE SKIP LOCKED
+                """, limit)
+            .ToListAsync();
+    }
+
     public async Task AddAsync(Job job)
     {
         await db.Jobs.AddAsync(job);
@@ -31,5 +44,20 @@ public class JobRepository(JobSchedulerDbContext db) : IJobRepository
     {
         db.Jobs.Update(job);
         await db.SaveChangesAsync();
+    }
+
+    public async Task DeleteOldJobsAsync(DateTime olderThan)
+    {
+        var terminal = new[] { JobStatus.Completed, JobStatus.Failed, JobStatus.Cancelled };
+        await db.Jobs
+            .Where(j => terminal.Contains(j.Status) && j.CreatedAt < olderThan)
+            .ExecuteDeleteAsync();
+    }
+
+    public async Task ResetStuckJobsAsync(DateTime stuckSince)
+    {
+        await db.Jobs
+            .Where(j => j.Status == JobStatus.Running && j.StartedAt < stuckSince)
+            .ExecuteUpdateAsync(s => s.SetProperty(j => j.Status, JobStatus.Pending));
     }
 }

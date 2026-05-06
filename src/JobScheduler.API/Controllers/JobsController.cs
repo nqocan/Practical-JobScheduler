@@ -9,7 +9,7 @@ namespace JobScheduler.API.Controllers;
 
 [ApiController]
 [Route("jobs")]
-public class JobsController(IJobRepository repository, IJobQueue queue) : ControllerBase
+public class JobsController(IJobRepository repository) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateJobRequest request)
@@ -17,7 +17,6 @@ public class JobsController(IJobRepository repository, IJobQueue queue) : Contro
         var payload = JsonSerializer.Serialize(request.Payload);
         var job = Job.Create(request.Type, payload);
         await repository.AddAsync(job);
-        await queue.EnqueueAsync(job);
         return CreatedAtAction(nameof(GetById), new { id = job.Id }, JobResponse.From(job));
     }
 

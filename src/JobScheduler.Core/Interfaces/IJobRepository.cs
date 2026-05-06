@@ -7,6 +7,9 @@ public interface IJobRepository
 {
     Task<Job> GetByIdAsync(Guid id);
     Task<IEnumerable<Job>> GetAllAsync(JobStatus? status = null);
+    Task<IEnumerable<Job>> GetPendingJobsAsync(int limit);
     Task AddAsync(Job job);
     Task UpdateAsync(Job job);
+    Task DeleteOldJobsAsync(DateTime olderThan);
+    Task ResetStuckJobsAsync(DateTime stuckSince);
 }

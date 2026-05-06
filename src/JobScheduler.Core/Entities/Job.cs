@@ -27,7 +27,7 @@ public class Job
             Payload = payload,
             RetryCount = 0,
             MaxRetries = maxRetries,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
     }
 
