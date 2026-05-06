@@ -40,6 +40,4 @@ public class JobsController(IJobRepository repository) : ControllerBase
         var jobs = await repository.GetAllAsync(status);
         return Ok(jobs.Select(JobResponse.From));
     }
-
-
 }

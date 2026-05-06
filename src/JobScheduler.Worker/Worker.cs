@@ -17,12 +17,14 @@ public class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> logger) :
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var channel = Channel.CreateBounded<Job>(new BoundedChannelOptions(BatchSize * 2)
-        {
-            FullMode = BoundedChannelFullMode.Wait,
-            SingleWriter = true,
-            SingleReader = false,
-        });
+        var channel = Channel.CreateBounded<Job>(
+            new BoundedChannelOptions(BatchSize * 2)
+            {
+                FullMode = BoundedChannelFullMode.Wait,
+                SingleWriter = true,
+                SingleReader = false,
+            }
+        );
 
         await Task.WhenAll(
             ProduceAsync(channel.Writer, stoppingToken),
@@ -64,18 +66,21 @@ public class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> logger) :
         {
             await semaphore.WaitAsync(ct);
 
-            _ = Task.Run(async () =>
-            {
-                try
+            _ = Task.Run(
+                async () =>
                 {
-                    await ProcessJobAsync(job, ct);
-                }
-                finally
-                {
-                    _inFlight.TryRemove(job.Id, out _);
-                    semaphore.Release();
-                }
-            }, ct);
+                    try
+                    {
+                        await ProcessJobAsync(job, ct);
+                    }
+                    finally
+                    {
+                        _inFlight.TryRemove(job.Id, out _);
+                        semaphore.Release();
+                    }
+                },
+                ct
+            );
         }
     }
 
@@ -99,7 +104,8 @@ public class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> logger) :
             await repository.UpdateAsync(job);
             logger.LogInformation("Completed job {JobId}", job.Id);
         }
-        catch (OperationCanceledException) when (cts.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
+        catch (OperationCanceledException)
+            when (cts.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
         {
             logger.LogWarning("Job {JobId} timed out after {Timeout}s", job.Id, TimeoutSeconds);
             await HandleFailureAsync(job, "Job timed out.", repository);
@@ -119,7 +125,12 @@ public class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> logger) :
         if (job.Status == JobStatus.Pending)
         {
             var delay = TimeSpan.FromSeconds(Math.Pow(2, job.RetryCount));
-            logger.LogInformation("Job {JobId} will retry in {Delay}s (attempt {Attempt})", job.Id, delay.TotalSeconds, job.RetryCount);
+            logger.LogInformation(
+                "Job {JobId} will retry in {Delay}s (attempt {Attempt})",
+                job.Id,
+                delay.TotalSeconds,
+                job.RetryCount
+            );
             await Task.Delay(delay);
         }
     }
@@ -130,9 +141,9 @@ public class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> logger) :
             JobType.Email => SimulateAsync(cancellationToken),
             JobType.Export => SimulateAsync(cancellationToken),
             JobType.Sync => SimulateAsync(cancellationToken),
-            _ => throw new NotSupportedException($"Unknown job type: {job.Type}")
+            _ => throw new NotSupportedException($"Unknown job type: {job.Type}"),
         };
 
-    private static Task SimulateAsync(CancellationToken cancellationToken)
-        => Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+    private static Task SimulateAsync(CancellationToken cancellationToken) =>
+        Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
 }

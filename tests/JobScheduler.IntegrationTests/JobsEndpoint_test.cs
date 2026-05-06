@@ -13,7 +13,12 @@ public class JobsEndpoint_test(JobsApiFactory factory) : IClassFixture<JobsApiFa
         new
         {
             type = "Email",
-            payload = new { to = "test@example.com", subject = "Hello", body = "World" },
+            payload = new
+            {
+                to = "test@example.com",
+                subject = "Hello",
+                body = "World",
+            },
         };
 
     [Fact]
@@ -33,8 +38,10 @@ public class JobsEndpoint_test(JobsApiFactory factory) : IClassFixture<JobsApiFa
     {
         // Arrange
         var created = await _client.PostAsJsonAsync("/jobs", EmailJobRequest());
-        var id = JsonDocument.Parse(await created.Content.ReadAsStringAsync())
-            .RootElement.GetProperty("id").GetString();
+        var id = JsonDocument
+            .Parse(await created.Content.ReadAsStringAsync())
+            .RootElement.GetProperty("id")
+            .GetString();
 
         // Act
         var response = await _client.GetAsync($"/jobs/{id}");
@@ -66,8 +73,10 @@ public class JobsEndpoint_test(JobsApiFactory factory) : IClassFixture<JobsApiFa
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var jobs = JsonDocument.Parse(await response.Content.ReadAsStringAsync())
-            .RootElement.EnumerateArray().ToList();
+        var jobs = JsonDocument
+            .Parse(await response.Content.ReadAsStringAsync())
+            .RootElement.EnumerateArray()
+            .ToList();
         jobs.Should().NotBeEmpty();
         jobs.Should().AllSatisfy(j => j.GetProperty("status").GetString().Should().Be("Pending"));
     }

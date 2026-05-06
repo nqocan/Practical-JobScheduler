@@ -33,10 +33,13 @@ public class JobsApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.ConfigureServices(services =>
         {
             var dbDescriptor = services.SingleOrDefault(d =>
-                d.ServiceType == typeof(DbContextOptions<JobSchedulerDbContext>));
-            if (dbDescriptor != null) services.Remove(dbDescriptor);
+                d.ServiceType == typeof(DbContextOptions<JobSchedulerDbContext>)
+            );
+            if (dbDescriptor != null)
+                services.Remove(dbDescriptor);
             services.AddDbContext<JobSchedulerDbContext>(options =>
-                options.UseNpgsql(_postgres.GetConnectionString()));
+                options.UseNpgsql(_postgres.GetConnectionString())
+            );
         });
     }
 }

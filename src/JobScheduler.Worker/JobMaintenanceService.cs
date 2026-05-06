@@ -2,20 +2,25 @@ using JobScheduler.Core.Interfaces;
 
 namespace JobScheduler.Worker;
 
-public class JobMaintenanceService(IServiceScopeFactory scopeFactory, ILogger<JobMaintenanceService> logger)
-    : BackgroundService
+public class JobMaintenanceService(
+    IServiceScopeFactory scopeFactory,
+    ILogger<JobMaintenanceService> logger
+) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
-        Task.WhenAll(
-            RunCleanLoopAsync(stoppingToken),
-            RunRecoveryLoopAsync(stoppingToken)
-        );
+        Task.WhenAll(RunCleanLoopAsync(stoppingToken), RunRecoveryLoopAsync(stoppingToken));
 
     private async Task RunCleanLoopAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
         {
-            await Task.Delay(TimeSpan.FromHours(24), ct);
+            var now = DateTime.UtcNow;
+            var next4Am = now.Date.AddHours(4);
+            if (now >= next4Am)
+                next4Am = next4Am.AddDays(1);
+
+            await Task.Delay(next4Am - now, ct);
+
             using var scope = scopeFactory.CreateScope();
             var repository = scope.ServiceProvider.GetRequiredService<IJobRepository>();
             await repository.DeleteOldJobsAsync(DateTime.UtcNow.AddDays(-1));
