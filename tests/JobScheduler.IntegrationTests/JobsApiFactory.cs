@@ -16,9 +16,13 @@ namespace JobScheduler.IntegrationTests;
 
 public class JobsApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder().WithImage("postgres:15-alpine").Build();
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
+        .WithImage("postgres:15-alpine")
+        .Build();
     private readonly RedisContainer _redis = new RedisBuilder().WithImage("redis:7-alpine").Build();
-    private readonly RabbitMqContainer _rabbit = new RabbitMqBuilder().WithImage("rabbitmq:3-management").Build();
+    private readonly RabbitMqContainer _rabbit = new RabbitMqBuilder()
+        .WithImage("rabbitmq:3-management")
+        .Build();
 
     public async Task InitializeAsync()
     {
@@ -40,32 +44,48 @@ public class JobsApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.ConfigureServices(services =>
         {
             // Replace DbContext
-            var dbDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<JobSchedulerDbContext>));
-            if (dbDescriptor != null) services.Remove(dbDescriptor);
+            var dbDescriptor = services.SingleOrDefault(d =>
+                d.ServiceType == typeof(DbContextOptions<JobSchedulerDbContext>)
+            );
+            if (dbDescriptor != null)
+                services.Remove(dbDescriptor);
             services.AddDbContext<JobSchedulerDbContext>(options =>
-                options.UseNpgsql(_postgres.GetConnectionString()));
+                options.UseNpgsql(_postgres.GetConnectionString())
+            );
 
             // Replace Redis
-            var redisDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IConnectionMultiplexer));
-            if (redisDescriptor != null) services.Remove(redisDescriptor);
+            var redisDescriptor = services.SingleOrDefault(d =>
+                d.ServiceType == typeof(IConnectionMultiplexer)
+            );
+            if (redisDescriptor != null)
+                services.Remove(redisDescriptor);
             services.AddSingleton<IConnectionMultiplexer>(_ =>
-                ConnectionMultiplexer.Connect(_redis.GetConnectionString()));
+                ConnectionMultiplexer.Connect(_redis.GetConnectionString())
+            );
 
             // Replace RabbitMQ
-            var factoryDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IConnectionFactory));
-            if (factoryDescriptor != null) services.Remove(factoryDescriptor);
+            var factoryDescriptor = services.SingleOrDefault(d =>
+                d.ServiceType == typeof(IConnectionFactory)
+            );
+            if (factoryDescriptor != null)
+                services.Remove(factoryDescriptor);
             var queueDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IJobQueue));
-            if (queueDescriptor != null) services.Remove(queueDescriptor);
+            if (queueDescriptor != null)
+                services.Remove(queueDescriptor);
 
             services.AddSingleton<IConnectionFactory>(_ => new ConnectionFactory
             {
-                Uri = new Uri(_rabbit.GetConnectionString())
+                Uri = new Uri(_rabbit.GetConnectionString()),
             });
             services.AddSingleton<IJobQueue>(sp =>
-                RabbitMqJobQueue.CreateAsync(
-                    sp.GetRequiredService<IConnectionFactory>(),
-                    sp.GetRequiredService<ILogger<RabbitMqJobQueue>>()
-                ).GetAwaiter().GetResult());
+                RabbitMqJobQueue
+                    .CreateAsync(
+                        sp.GetRequiredService<IConnectionFactory>(),
+                        sp.GetRequiredService<ILogger<RabbitMqJobQueue>>()
+                    )
+                    .GetAwaiter()
+                    .GetResult()
+            );
         });
     }
 }

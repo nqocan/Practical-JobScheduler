@@ -10,24 +10,30 @@ var builder = Host.CreateApplicationBuilder(args);
 
 // PostgreSQL
 builder.Services.AddDbContext<JobSchedulerDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"))
+);
 builder.Services.AddScoped<IJobRepository, JobRepository>();
 
 // Redis
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
-    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")!));
+    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")!)
+);
 builder.Services.AddScoped<IJobStatusTracker, RedisJobStatusTracker>();
 
 // RabbitMQ
 builder.Services.AddSingleton<IConnectionFactory>(_ => new ConnectionFactory
 {
-    Uri = new Uri(builder.Configuration.GetConnectionString("RabbitMq")!)
+    Uri = new Uri(builder.Configuration.GetConnectionString("RabbitMq")!),
 });
 builder.Services.AddSingleton<IJobQueue>(sp =>
-    RabbitMqJobQueue.CreateAsync(
-        sp.GetRequiredService<IConnectionFactory>(),
-        sp.GetRequiredService<ILogger<RabbitMqJobQueue>>()
-    ).GetAwaiter().GetResult());
+    RabbitMqJobQueue
+        .CreateAsync(
+            sp.GetRequiredService<IConnectionFactory>(),
+            sp.GetRequiredService<ILogger<RabbitMqJobQueue>>()
+        )
+        .GetAwaiter()
+        .GetResult()
+);
 
 builder.Services.AddHostedService<Worker>();
 
